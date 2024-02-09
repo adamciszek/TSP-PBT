@@ -31,9 +31,7 @@ test {
         includeEngines 'junit-jupiter'
         // includeEngines 'junit-vintage'
 
-        include '**/*Properties.class'
-        include '**/*Test.class'
-        include '**/*Tests.class'
+        include '**/*Properties.java'
     }
 }
 

@@ -1,4 +1,4 @@
-package tsp;
+package TSP;
 
 public class City {
 	private String name;
