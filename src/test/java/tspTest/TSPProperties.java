@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import TSP.City;
 import TSP.Route;
+import TSP.TSP;
 
 import java.util.List;
 
@@ -105,4 +106,43 @@ public class TSPProperties {
 
     // TESTING TSP.java ===============================================================================================
 
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testTSPWithOnePath(@ForAll("onePathMatrix") double[][] distances) {
+        
+        // run TSP with the given distances matrix
+        Assertions.assertThat(false).isTrue();
+    }
+
+    @Provide
+    Arbitrary<double[][]> onePathMatrix() {
+        return Arbitraries.integers().between(3, 10)
+                .flatMap(this::matrixWithOnePath);
+    }
+
+    private Arbitrary<double[][]> matrixWithOnePath(int size) {
+        return Arbitraries.create(() -> {
+            double[][] matrix = new double[size][size];
+
+            // set all values to 0
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    matrix[i][j] = 0;
+                }
+            }
+
+            // set one random path
+            int start = Arbitraries.integers().between(0, size - 1).sample();
+            int end = Arbitraries.integers().between(0, size - 1).sample();
+
+            while (end == start) {
+                end = Arbitraries.integers().between(0, size - 1).sample();
+            }
+
+            matrix[start][end] = 1;
+
+            return matrix;
+        });
+    }
 }
