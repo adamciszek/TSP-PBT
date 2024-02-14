@@ -106,13 +106,13 @@ public class TSPProperties {
 
     // TESTING TSP.java ===============================================================================================
 
-
     @Property
     @Report(Reporting.GENERATED)
     void testTSPWithOnePath(@ForAll("onePathMatrix") double[][] distances) {
 
+        // tsp instance
         TSP newTSP = new TSP();
-
+        // assigning our generated distance table to the instance
         newTSP.distances = distances;
 
         Assertions.assertThat(true).isEqualTo(true);
@@ -126,6 +126,7 @@ public class TSPProperties {
     }
 
     private Arbitrary<double[][]> matrixWithOnePath(int size) {
+        // FIX THIS
         return Arbitraries.create(() -> {
             double[][] matrix = new double[size][size];
 
