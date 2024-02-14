@@ -5,7 +5,7 @@ import java.util.List;
 
 public class TSP {
 	// Distance lookup table
-	private static final double[][] distances = { { 0, 129, 119, 43.6, 98.6, 98.6, 86.3, 52.2, 85.3, 44.5 },
+	public static double[][] distances = { { 0, 129, 119, 43.6, 98.6, 98.6, 86.3, 52.2, 85.3, 44.5 },
 			{ 129, 0, 88.3, 149, 152, 57.4, 55.4, 141, 93.3, 86.3 },
 			{ 119, 88.3, 0, 97.4, 71.6, 72.6, 42.5, 71.6, 35.5, 92.1 },
 			{ 43.6, 149, 97.4, 0, 54, 119, 107, 28, 64.2, 60.7 },
@@ -157,7 +157,7 @@ public class TSP {
 		// Setup city list
 		resetLists();
 
-		// Remove stoke from permutations as always start and end
+		// Remove halifax from permutations as always start and end
 		List<Integer> cityNums = new ArrayList<Integer>();
 		for (int i = 0; i < 9; i++) {
 			cityNums.add(i);
@@ -183,16 +183,16 @@ public class TSP {
 		cities = new ArrayList<City>();
 
 		// Populate City list
-		cities.add(new City("Birmingham", 0, false));
-		cities.add(new City("Lancaster", 1, false));
-		cities.add(new City("Leeds", 2, false));
-		cities.add(new City("Leicester", 3, false));
-		cities.add(new City("Lincoln", 4, false));
-		cities.add(new City("Liverpool", 5, false));
-		cities.add(new City("Manchester", 6, false));
-		cities.add(new City("Nottingham", 7, false));
-		cities.add(new City("Sheffield", 8, false));
-		cities.add(new City("Stoke", 9, true));
+		cities.add(new City("Vancouver", 0, false));
+		cities.add(new City("Edmonton", 1, false));
+		cities.add(new City("Calgary", 2, false));
+		cities.add(new City("Winnipeg", 3, false));
+		cities.add(new City("Hamilton", 4, false));
+		cities.add(new City("Toronto", 5, false));
+		cities.add(new City("Kingston", 6, false));
+		cities.add(new City("Ottawa", 7, false));
+		cities.add(new City("Montreal", 8, false));
+		cities.add(new City("Halifax", 9, true));
 	}
 
 	/**
