@@ -100,7 +100,7 @@ public class TSP {
 	/**
 	 * Calculates shortest route using nearest neighbour algorithm
 	 */
-	private static void nearestNeighbour() {
+	public static void nearestNeighbour() {
 		System.out.println("nearestNeighbour:");
 		// Setup city list
 		resetLists();
@@ -152,7 +152,7 @@ public class TSP {
 	/**
 	 * Calculates the shortest route using branch and bound algorithm
 	 */
-	private static void branchAndBound() {
+	public static void branchAndBound() {
 		System.out.println("branchAndBound:");
 		// Setup city list
 		resetLists();
@@ -297,5 +297,19 @@ public class TSP {
 			tempCost += distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
 		}
 		return tempCost;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		for (double[] row : distances) {
+			for (double distance : row) {
+				sb.append(distance).append("\t");
+			}
+			sb.append("\n");
+		}
+
+		return sb.toString();
 	}
 }

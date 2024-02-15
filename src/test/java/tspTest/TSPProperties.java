@@ -115,6 +115,11 @@ public class TSPProperties {
         // assigning our generated distance table to the instance
         newTSP.distances = distances;
 
+        System.out.println("DISTANCE TABLE:\n" + newTSP);
+
+        //check here now that the algorithms do get the right solution
+
+
         Assertions.assertThat(true).isEqualTo(true);
 
     }
@@ -126,26 +131,20 @@ public class TSPProperties {
     }
 
     private Arbitrary<double[][]> matrixWithOnePath(int size) {
-        // FIX THIS
         return Arbitraries.create(() -> {
             double[][] matrix = new double[size][size];
 
-            // set all values to 0
             for (int i = 0; i < size; i++) {
                 for (int j = 0; j < size; j++) {
                     matrix[i][j] = 0;
                 }
             }
-
-            // set one random path
             int start = Arbitraries.integers().between(0, size - 1).sample();
-            int end = Arbitraries.integers().between(0, size - 1).sample();
 
-            while (end == start) {
-                end = Arbitraries.integers().between(0, size - 1).sample();
+            for (int i = 0; i < size; i++) {
+                int nextCity = (start + i) % size;
+                matrix[nextCity][((nextCity + 1) % size)] = 1;
             }
-
-            matrix[start][end] = 1;
 
             return matrix;
         });
