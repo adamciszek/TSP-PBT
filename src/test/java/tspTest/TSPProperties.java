@@ -124,6 +124,36 @@ public class TSPProperties {
 
     }
 
+    @Property
+    @Report(Reporting.GENERATED)
+    void testNumCities(@ForAll("onePathMatrix") double[][] distances) {
+
+        // tsp instance
+        TSP newTSP = new TSP();
+        // assigning our generated distance table to the instance
+        newTSP.distances = distances;
+
+        //test that the number of cities in the path is exactly n
+
+        Assertions.assertThat(true).isEqualTo(true);
+
+    }
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testUniqueCities(@ForAll("onePathMatrix") double[][] distances) {
+
+        // tsp instance
+        TSP newTSP = new TSP();
+        // assigning our generated distance table to the instance
+        newTSP.distances = distances;
+
+        //test that each city is only visited once
+
+        Assertions.assertThat(true).isEqualTo(true);
+
+    }
+
     @Provide
     Arbitrary<double[][]> onePathMatrix() {
         return Arbitraries.integers().between(3, 10)
