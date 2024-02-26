@@ -312,4 +312,20 @@ public class TSP {
 
 		return sb.toString();
 	}
+
+	public List<Route> getBFRoutePerms() {
+		return BFRoutePerms;
+	}
+
+	public List<Route> getBaBRoutePerms() {
+		return BaBRoutePerms;
+	}
+
+	public Route getBaBcheapestRoute() {
+		return BaBcheapestRoute;
+	}
+
+	public List<City> getCities() {
+		return cities;
+	}
 }

@@ -13,6 +13,7 @@ import TSP.City;
 import TSP.Route;
 import TSP.TSP;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TSPProperties {
@@ -112,15 +113,21 @@ public class TSPProperties {
 
         // tsp instance
         TSP newTSP = new TSP();
-        // assigning our generated distance table to the instance
-        newTSP.distances = distances;
 
-        System.out.println("DISTANCE TABLE:\n" + newTSP);
+        newTSP.distances = distances; // assigning our generated distance table to the instance
 
-        //check here now that the algorithms do get the right solution
+        newTSP.branchAndBound();
 
+        Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
 
-        Assertions.assertThat(true).isEqualTo(true);
+        List<Route> routes = newTSP.getBaBRoutePerms(); //getting all possible permutations
+
+        // need to fix this so that i am getting only feasible permutations, rather then all permutations possible (there is only one feasible path, but can be displayed in 10 different ways due to there being 10 different cities)
+
+        for (Route route : routes) {
+            Assertions.assertThat(route).isEqualTo(sol);
+        }
+
 
     }
 
@@ -130,12 +137,18 @@ public class TSPProperties {
 
         // tsp instance
         TSP newTSP = new TSP();
-        // assigning our generated distance table to the instance
-        newTSP.distances = distances;
+
+        newTSP.distances = distances; // assigning our generated distance table to the instance
+
+        newTSP.branchAndBound();
 
         //test that the number of cities in the path is exactly n
 
-        Assertions.assertThat(true).isEqualTo(true);
+        int actualNumOfCities = 10;
+
+        int NumOfCities = newTSP.getBaBcheapestRoute().getRoute().size()-1; // must subtract 1 since solution set contains first city twice
+
+        Assertions.assertThat(NumOfCities).isEqualTo(actualNumOfCities);
 
     }
 
@@ -150,18 +163,29 @@ public class TSPProperties {
 
         //test that each city is only visited once
 
-        Assertions.assertThat(true).isEqualTo(true);
+        newTSP.branchAndBound();
+
+        Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
+
+        List<City> cities = sol.getRoute(); //all cities in the solution (contains first city twice)
+
+        List<City> uniqueCities = new ArrayList<>();; //contains unique cities in solution
+
+        for (City city : cities) {
+            if (!uniqueCities.contains(city)) {
+                uniqueCities.add(city);
+            }
+        }
+
+        Assertions.assertThat(uniqueCities.size()).isEqualTo(cities.size()-1);
 
     }
 
     @Provide
     Arbitrary<double[][]> onePathMatrix() {
-        return Arbitraries.integers().between(3, 10)
-                .flatMap(this::matrixWithOnePath);
-    }
-
-    private Arbitrary<double[][]> matrixWithOnePath(int size) {
+        // need to fix this so that it is generating all possible unique matrixes such that only one path exists
         return Arbitraries.create(() -> {
+            int size = 10;
             double[][] matrix = new double[size][size];
 
             for (int i = 0; i < size; i++) {
