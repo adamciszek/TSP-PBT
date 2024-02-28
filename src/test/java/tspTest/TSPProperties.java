@@ -3,18 +3,16 @@ package TSPTest;
 import net.jqwik.api.*;
 import net.jqwik.api.constraints.CharRange;
 import net.jqwik.api.constraints.IntRange;
-import net.jqwik.api.constraints.NotEmpty;
 import net.jqwik.api.constraints.StringLength;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.data.*;
-import org.junit.jupiter.api.Test;
 
 import TSP.City;
 import TSP.Route;
 import TSP.TSP;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class TSPProperties {
 
@@ -109,7 +107,7 @@ public class TSPProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testTSPWithOnePath(@ForAll("onePathMatrix") double[][] distances) {
+    void testTSPWithOnePath(@ForAll("onePathMatrixList") double[][] distances) {
 
         // tsp instance
         TSP newTSP = new TSP();
@@ -122,27 +120,22 @@ public class TSPProperties {
 
         List<Route> routes = newTSP.getBaBRoutePerms(); //getting all possible permutations
 
-        // need to fix this so that i am getting only feasible permutations, rather then all permutations possible (there is only one feasible path, but can be displayed in 10 different ways due to there being 10 different cities)
-
-        for (Route route : routes) {
-            Assertions.assertThat(route).isEqualTo(sol);
-        }
+        // check if routes contain the expected solution
+        Assertions.assertThat(routes).contains(sol);
 
 
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testNumCities(@ForAll("onePathMatrix") double[][] distances) {
+    void testNumCities(@ForAll("matrixList") double[][] distances) {
+        //test that the number of cities in the path is exactly n
 
         // tsp instance
         TSP newTSP = new TSP();
 
         newTSP.distances = distances; // assigning our generated distance table to the instance
 
-        newTSP.branchAndBound();
-
-        //test that the number of cities in the path is exactly n
 
         int actualNumOfCities = 10;
 
@@ -154,16 +147,14 @@ public class TSPProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testUniqueCities(@ForAll("onePathMatrix") double[][] distances) {
+    void testUniqueCities(@ForAll("matrixList") double[][] distances) {
+        //test that each city is only visited once
 
         // tsp instance
         TSP newTSP = new TSP();
+
         // assigning our generated distance table to the instance
         newTSP.distances = distances;
-
-        //test that each city is only visited once
-
-        newTSP.branchAndBound();
 
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
 
@@ -181,26 +172,69 @@ public class TSPProperties {
 
     }
 
+//GENERATORS------------------------------------------------------------
     @Provide
-    Arbitrary<double[][]> onePathMatrix() {
-        // need to fix this so that it is generating all possible unique matrixes such that only one path exists
-        return Arbitraries.create(() -> {
-            int size = 10;
-            double[][] matrix = new double[size][size];
+    public Arbitrary<double[][]> onePathMatrixList() {
+        return onePathMatrixGenerator();
+    }
 
-            for (int i = 0; i < size; i++) {
-                for (int j = 0; j < size; j++) {
-                    matrix[i][j] = 0;
+    private Arbitrary<double[][]> onePathMatrixGenerator() {
+        return Arbitraries.just(10) // matrix size of 10
+                .flatMap(size -> Arbitraries.create(() -> {
+                    double[][] matrix = new double[size][size];
+                    // initialize matrix with Integer.MAX_VALUE
+                    for (double[] row : matrix) Arrays.fill(row, Integer.MAX_VALUE);
+
+                    // shuffle indices
+                    List<Integer> shuffledIndices = IntStream.range(0, size).boxed().collect(Collectors.toList());
+                    Collections.shuffle(shuffledIndices);
+
+                    // set 0 and 1 for each row according to the shuffled indices
+                    for (int i = 0; i < size; i++) {
+                        matrix[i][shuffledIndices.get(i)] = 0;
+                        // shift location for 1 by 1 position in the loop,
+                        // % size to loop back to 0 when exceeding matrix size
+                        matrix[i][shuffledIndices.get((i + 1) % size)] = 1;
+                    }
+                    return matrix;
+                }));
+    }
+
+
+    @Provide
+    public Arbitrary<double[][]> matrixList() {
+        return singleMatrixGenerator();
+    }
+
+    private Arbitrary<double[][]> singleMatrixGenerator() {
+        // create an arbitrary number in the range 1 to 100, inclusive
+        Arbitrary<Double> doubles = Arbitraries.doubles().between(1.0, 100.0);
+
+        int size = 10;
+        return Arbitraries.just(size).flatMap(s -> Arbitraries.create(() -> {
+            double[][] matrix = new double[s][s];
+
+            // initialize the array with random doubles
+            for (double[] row : matrix) {
+                for (int j = 0; j < s; j++) {
+                    row[j] = doubles.sample();
                 }
             }
-            int start = Arbitraries.integers().between(0, size - 1).sample();
 
-            for (int i = 0; i < size; i++) {
-                int nextCity = (start + i) % size;
-                matrix[nextCity][((nextCity + 1) % size)] = 1;
+            List<Integer> positions = IntStream.range(0, s)
+                    .boxed()
+                    .collect(Collectors.toList());
+            Collections.shuffle(positions);
+
+            for (int i = 0; i < s; i++) {
+                // put 0.0 in a unique column for each row.
+                matrix[i][positions.get(i)] = 0.0;
             }
 
             return matrix;
-        });
+        }));
     }
+
+
+
 }

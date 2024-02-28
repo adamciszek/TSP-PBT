@@ -291,7 +291,7 @@ public class TSP {
 	 * @return tempCost
 	 */
 	private static Double getRouteCost(Route r) {
-		double tempCost = 0;
+		double tempCost = 0.0;
 		// Add route costs
 		for (int i = 0; i < r.getRoute().size() - 1; i++) {
 			tempCost += distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
