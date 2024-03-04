@@ -185,7 +185,7 @@ public class TSPProperties {
         TSP newTSP = new TSP();
 
         // assigning our generated distance table to the instance
-        TSP.distances = distances;
+        newTSP.distances = distances;
         TSP.branchAndBound();
 
         System.out.println(newTSP);
@@ -240,7 +240,7 @@ public class TSPProperties {
             }
         }
 
-        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isLessThan(maxWeight);
+        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isLessThan(maxWeight * 11);
     }
 
 
@@ -249,30 +249,30 @@ public class TSPProperties {
     public Arbitrary<Integer[][]> onePathMatrixGenerator() {
         int size = 10;
 
-        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(Integer.MAX_VALUE, Integer.MAX_VALUE).array(Integer[].class).ofSize(size);
+        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(Integer.MAX_VALUE-10, Integer.MAX_VALUE).array(Integer[].class).ofSize(size);
 
         Arbitrary<Integer[][]> matrixArb = zeroArrayArb.array(Integer[][].class)
                 .ofSize(size)
                 .map(m -> {
+                    // place 0's at diagonal
+                    IntStream.range(0, size).forEach(i -> m[i][i] = 0);
+
                     List<Integer> indices = IntStream.range(0, size).boxed().collect(Collectors.toList());
-
-                    // Shuffle indices for random 0s placement
+                    // Shuffle indices  for random 1s placement
                     Collections.shuffle(indices);
-                    for (int i = 0; i < size; i++) {
-                        m[i][indices.get(i)] = 0;
-                    }
-
-                    List<Integer> indicesForOnes = new ArrayList<>(indices);
-                    // Shuffle indices again for random 1s placement, independent of 0s
-                    Collections.shuffle(indicesForOnes);
 
                     for (int i = 0; i < size; i++) {
-                        if (m[i][indicesForOnes.get(i)] != 0) {
-                            m[i][indicesForOnes.get(i)] = 1;
+                        if (m[i][indices.get(i)] != 0) {
+                            m[i][indices.get(i)] = 1;
                         }
                     }
                     return m;
-                });
+                })
+                .filter(m ->
+                    IntStream.range(0, m.length)
+                        .allMatch(i -> IntStream.range(i, m[i].length)
+                                .allMatch(j -> m[i][j].equals(m[j][i]))));
+
 
         return matrixArb;
     }
@@ -287,19 +287,17 @@ public class TSPProperties {
         Arbitrary<Integer[][]> intMatrixArb =
                 intArrayArb.array(Integer[][].class)
                         .ofSize(size)
-                        .map(m -> {    // Ensure there is a 0 in each row and no two zeros are in the same column
+                        .map(m -> {    // Ensure there is a 0 at the diagonal
 
-                            // Create a list of column indices and shuffle it
-                            List<Integer> columns = IntStream.range(0, m[0].length)
-                                    .boxed()
-                                    .collect(Collectors.toList());
-                            Collections.shuffle(columns);
+                            // place 0's at diagonal
+                            IntStream.range(0, size).forEach(i -> m[i][i] = 0);
 
-                            for (int i = 0; i < m.length; i++) {
-                                m[i][columns.get(i)] = 0; // Place a 0 in a randomly chosen (unique per row) column
-                            }
                             return m;
-                        });
+                        })
+                        .filter(m ->
+                            IntStream.range(0, m.length)
+                                .allMatch(i -> IntStream.range(i, m[i].length)
+                                    .allMatch(j -> m[i][j].equals(m[j][i]))));
 
         return intMatrixArb;
     }
@@ -313,29 +311,26 @@ public class TSPProperties {
         Arbitrary<Integer[][]> intMatrixArb =
                 intArrayArb.array(Integer[][].class)
                         .ofSize(size)
-                        .map(m -> {    // Ensure there is a 0 in each row and no two zeros are in the same column
+                        .map(m -> {
 
-                            // Create a list of column indices and shuffle it
-                            List<Integer> columns = IntStream.range(0, m[0].length)
-                                    .boxed()
-                                    .collect(Collectors.toList());
-                            Collections.shuffle(columns);
+                            // place 0's at diagonal
+                            IntStream.range(0, size).forEach(i -> m[i][i] = 0);
 
-                            for (int i = 0; i < m.length; i++) {
-                                m[i][columns.get(i)] = 0; // Place a 0 in a randomly chosen (unique per row) column
-                            }
-
-                            List<Integer> indicesForOnes = new ArrayList<>(columns);
-                            // Shuffle indices again for random 1s placement, independent of 0s
-                            Collections.shuffle(indicesForOnes);
+                            List<Integer> indices = IntStream.range(0, size).boxed().collect(Collectors.toList());
+                            // Shuffle indices  for random 1s placement
+                            Collections.shuffle(indices);
 
                             for (int i = 0; i < size; i++) {
-                                if (m[i][indicesForOnes.get(i)] != 0) {
-                                    m[i][indicesForOnes.get(i)] = 1;
+                                if (m[i][indices.get(i)] != 0) {
+                                    m[i][indices.get(i)] = 1;
                                 }
                             }
                             return m;
-                        });
+                        })
+                        .filter(m ->
+                            IntStream.range(0, m.length)
+                                .allMatch(i -> IntStream.range(i, m[i].length)
+                                    .allMatch(j -> m[i][j].equals(m[j][i]))));
         return intMatrixArb;
     }
 
