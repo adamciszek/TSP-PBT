@@ -5,16 +5,16 @@ import java.util.List;
 
 public class TSP {
 	// Distance lookup table
-	public static double[][] distances = { { 0, 129, 119, 43.6, 98.6, 98.6, 86.3, 52.2, 85.3, 44.5 },
-			{ 129, 0, 88.3, 149, 152, 57.4, 55.4, 141, 93.3, 86.3 },
-			{ 119, 88.3, 0, 97.4, 71.6, 72.6, 42.5, 71.6, 35.5, 92.1 },
-			{ 43.6, 149, 97.4, 0, 54, 119, 107, 28, 64.2, 60.7 },
-			{ 98.6, 152, 71.6, 54, 0, 138, 85.2, 39.9, 48.6, 90.7 },
-			{ 98.6, 57.4, 72.6, 119, 138, 0, 34.9, 111, 77.1, 56.3 },
-			{ 86.3, 55.4, 42.5, 107, 85.2, 34.9, 0, 80.9, 37.9, 44.7 },
-			{ 52.2, 141, 71.6, 28, 39.9, 111, 80.9, 0, 38.8, 52.4 },
-			{ 85.3, 93.3, 35.5, 64.2, 48.6, 77.1, 37.9, 38.8, 0, 47.4 },
-			{ 44.5, 86.3, 92.1, 60.7, 90.7, 56.3, 44.7, 52.4, 47.4, 0 }, };
+	public static Integer[][] distances = { { 0, 129, 119, 43, 98, 98, 86, 52, 85, 44 },
+			{ 129, 0, 88, 149, 152, 57, 55, 141, 93, 86 },
+			{ 119, 88, 0, 97, 72, 72, 42, 72, 35, 92 },
+			{ 43, 149, 97, 0, 54, 119, 107, 28, 64, 60 },
+			{ 98, 152, 72, 54, 0, 138, 85, 39, 48, 90 },
+			{ 98, 57, 72, 119, 138, 0, 35, 111, 77, 56 },
+			{ 86, 55, 42, 107, 85, 35, 0, 80, 37, 44 },
+			{ 52, 141, 72, 28, 39, 111, 80, 0, 38, 52 },
+			{ 85, 93, 35, 64, 48, 77, 37, 38, 0, 47 },
+			{ 44, 86, 92, 60, 90, 56, 44, 52, 47, 0 }, };
 
 	// Generic variables
 	// Populate a list with the cities
@@ -22,12 +22,12 @@ public class TSP {
 
 	// Brute force (BF) variables
 	private static List<Route> BFRoutePerms = new ArrayList<Route>();
-	private static double BFcheapestCost = Double.MAX_VALUE;
+	private static Integer BFcheapestCost = Integer.MAX_VALUE;
 	private static Route BFcheapestRoute;
 
 	// Branch and bound (BaB) variables
 	private static List<Route> BaBRoutePerms = new ArrayList<Route>();
-	private static double BaBcheapestCost = Double.MAX_VALUE;
+	private static Integer BaBcheapestCost = Integer.MAX_VALUE;
 	private static Route BaBcheapestRoute;
 
 	/**
@@ -70,7 +70,7 @@ public class TSP {
 		System.out.println("\tBB:" + time3 / numIterations + "ms");
 		// Output rough memory usage (profiler is more accurate)
 		System.out.println(
-				"KB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
+				"KB: " + (int) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
 	}
 
 	/************************************************************************************************************/
@@ -105,7 +105,7 @@ public class TSP {
 		// Setup city list
 		resetLists();
 
-		double routeCost = 0;
+		Integer routeCost = 0;
 
 		// New route with start as Stoke
 		Route nearestRoute = new Route(cities.get(9));
@@ -113,7 +113,7 @@ public class TSP {
 		while (nearestRoute.getRoute().size() != cities.size()) {
 
 			City neighbourCity = null;
-			double neighbourDistance = Double.MAX_VALUE;
+			int neighbourDistance = Integer.MAX_VALUE;
 
 			for (int i = 0; i < 9; i++) {
 				// If closer and not self and not visited
@@ -192,7 +192,7 @@ public class TSP {
 		cities.add(new City("Kingston", 6, false));
 		cities.add(new City("Ottawa", 7, false));
 		cities.add(new City("Montreal", 8, false));
-		cities.add(new City("Halifax", 9, true));
+		cities.add(new City("Halifax", 9, false));
 	}
 
 	/**
@@ -290,8 +290,8 @@ public class TSP {
 	 * @param r
 	 * @return tempCost
 	 */
-	private static Double getRouteCost(Route r) {
-		double tempCost = 0.0;
+	public static Integer getRouteCost(Route r) {
+		Integer tempCost = 0;
 		// Add route costs
 		for (int i = 0; i < r.getRoute().size() - 1; i++) {
 			tempCost += distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
@@ -303,8 +303,8 @@ public class TSP {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		for (double[] row : distances) {
-			for (double distance : row) {
+		for (Integer[] row : distances) {
+			for (Integer distance : row) {
 				sb.append(distance).append("\t");
 			}
 			sb.append("\n");
@@ -324,6 +324,8 @@ public class TSP {
 	public Route getBaBcheapestRoute() {
 		return BaBcheapestRoute;
 	}
+
+	public Integer getBaBcheapestCost() { return BaBcheapestCost; }
 
 	public List<City> getCities() {
 		return cities;

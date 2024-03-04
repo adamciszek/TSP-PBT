@@ -11,6 +11,7 @@ import TSP.Route;
 import TSP.TSP;
 
 import java.util.*;
+import java.util.stream.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -107,14 +108,15 @@ public class TSPProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testTSPWithOnePath(@ForAll("onePathMatrixList") double[][] distances) {
+    void testTSPWithOnePath(@ForAll("onePathMatrixGenerator") Integer[][] distances) {
 
         // tsp instance
         TSP newTSP = new TSP();
 
-        newTSP.distances = distances; // assigning our generated distance table to the instance
+        TSP.distances = distances; // assigning our generated distance table to the instance
+        TSP.branchAndBound();
 
-        newTSP.branchAndBound();
+        System.out.println(newTSP);
 
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
 
@@ -128,13 +130,15 @@ public class TSPProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testNumCities(@ForAll("matrixList") double[][] distances) {
+    void testNumCities(@ForAll("matrixGenerator") Integer[][] distances) {
         //test that the number of cities in the path is exactly n
 
         // tsp instance
         TSP newTSP = new TSP();
 
-        newTSP.distances = distances; // assigning our generated distance table to the instance
+        TSP.distances = distances; // assigning our generated distance table to the instance
+        TSP.branchAndBound();
+        // System.out.println(newTSP);
 
 
         int actualNumOfCities = 10;
@@ -147,14 +151,16 @@ public class TSPProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testUniqueCities(@ForAll("matrixList") double[][] distances) {
+    void testUniqueCities(@ForAll("matrixGenerator") Integer[][] distances) {
         //test that each city is only visited once
 
         // tsp instance
         TSP newTSP = new TSP();
 
         // assigning our generated distance table to the instance
-        newTSP.distances = distances;
+        TSP.distances = distances;
+        TSP.branchAndBound();
+        //System.out.println(newTSP);
 
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
 
@@ -172,69 +178,166 @@ public class TSPProperties {
 
     }
 
+    @Property
+    @Report(Reporting.GENERATED)
+    void testCostIsTen(@ForAll("matrixCostTen") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        System.out.println(newTSP);
+
+        Assertions.assertThat(( TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isEqualTo(10);
+
+    }
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testCostIsGreaterThanMin(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        Route r = newTSP.getBaBcheapestRoute();
+        int minWeight = Integer.MAX_VALUE;
+
+        for (int i = 0; i < r.getRoute().size() - 1; i++) {
+            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
+
+            if ((weight < minWeight) && (weight != 0)) {
+                minWeight = weight;
+            }
+        }
+
+        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isGreaterThan(minWeight);
+
+    }
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testCostIsLessThanMax(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        Route r = newTSP.getBaBcheapestRoute();
+        int maxWeight = Integer.MIN_VALUE;
+
+        for (int i = 0; i < r.getRoute().size() - 1; i++) {
+            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
+
+            if ((weight > maxWeight) && (weight != 0)) {
+                maxWeight = weight;
+            }
+        }
+
+        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isLessThan(maxWeight);
+    }
+
+
 //GENERATORS------------------------------------------------------------
     @Provide
-    public Arbitrary<double[][]> onePathMatrixList() {
-        return onePathMatrixGenerator();
-    }
+    public Arbitrary<Integer[][]> onePathMatrixGenerator() {
+        int size = 10;
 
-    private Arbitrary<double[][]> onePathMatrixGenerator() {
-        return Arbitraries.just(10) // matrix size of 10
-                .flatMap(size -> Arbitraries.create(() -> {
-                    double[][] matrix = new double[size][size];
-                    // initialize matrix with Integer.MAX_VALUE
-                    for (double[] row : matrix) Arrays.fill(row, Integer.MAX_VALUE);
+        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(Integer.MAX_VALUE, Integer.MAX_VALUE).array(Integer[].class).ofSize(size);
 
-                    // shuffle indices
-                    List<Integer> shuffledIndices = IntStream.range(0, size).boxed().collect(Collectors.toList());
-                    Collections.shuffle(shuffledIndices);
+        Arbitrary<Integer[][]> matrixArb = zeroArrayArb.array(Integer[][].class)
+                .ofSize(size)
+                .map(m -> {
+                    List<Integer> indices = IntStream.range(0, size).boxed().collect(Collectors.toList());
 
-                    // set 0 and 1 for each row according to the shuffled indices
+                    // Shuffle indices for random 0s placement
+                    Collections.shuffle(indices);
                     for (int i = 0; i < size; i++) {
-                        matrix[i][shuffledIndices.get(i)] = 0;
-                        // shift location for 1 by 1 position in the loop,
-                        // % size to loop back to 0 when exceeding matrix size
-                        matrix[i][shuffledIndices.get((i + 1) % size)] = 1;
+                        m[i][indices.get(i)] = 0;
                     }
-                    return matrix;
-                }));
+
+                    List<Integer> indicesForOnes = new ArrayList<>(indices);
+                    // Shuffle indices again for random 1s placement, independent of 0s
+                    Collections.shuffle(indicesForOnes);
+
+                    for (int i = 0; i < size; i++) {
+                        if (m[i][indicesForOnes.get(i)] != 0) {
+                            m[i][indicesForOnes.get(i)] = 1;
+                        }
+                    }
+                    return m;
+                });
+
+        return matrixArb;
     }
 
 
     @Provide
-    public Arbitrary<double[][]> matrixList() {
-        return singleMatrixGenerator();
-    }
-
-    private Arbitrary<double[][]> singleMatrixGenerator() {
-        // create an arbitrary number in the range 1 to 100, inclusive
-        Arbitrary<Double> doubles = Arbitraries.doubles().between(1.0, 100.0);
-
+    public Arbitrary<Integer[][]> matrixGenerator() {
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE);
         int size = 10;
-        return Arbitraries.just(size).flatMap(s -> Arbitraries.create(() -> {
-            double[][] matrix = new double[s][s];
 
-            // initialize the array with random doubles
-            for (double[] row : matrix) {
-                for (int j = 0; j < s; j++) {
-                    row[j] = doubles.sample();
-                }
-            }
+        Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
+        Arbitrary<Integer[][]> intMatrixArb =
+                intArrayArb.array(Integer[][].class)
+                        .ofSize(size)
+                        .map(m -> {    // Ensure there is a 0 in each row and no two zeros are in the same column
 
-            List<Integer> positions = IntStream.range(0, s)
-                    .boxed()
-                    .collect(Collectors.toList());
-            Collections.shuffle(positions);
+                            // Create a list of column indices and shuffle it
+                            List<Integer> columns = IntStream.range(0, m[0].length)
+                                    .boxed()
+                                    .collect(Collectors.toList());
+                            Collections.shuffle(columns);
 
-            for (int i = 0; i < s; i++) {
-                // put 0.0 in a unique column for each row.
-                matrix[i][positions.get(i)] = 0.0;
-            }
+                            for (int i = 0; i < m.length; i++) {
+                                m[i][columns.get(i)] = 0; // Place a 0 in a randomly chosen (unique per row) column
+                            }
+                            return m;
+                        });
 
-            return matrix;
-        }));
+        return intMatrixArb;
     }
 
+    @Provide
+    public Arbitrary<Integer[][]> matrixCostTen() {
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE);
+        int size = 10;
+
+        Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
+        Arbitrary<Integer[][]> intMatrixArb =
+                intArrayArb.array(Integer[][].class)
+                        .ofSize(size)
+                        .map(m -> {    // Ensure there is a 0 in each row and no two zeros are in the same column
+
+                            // Create a list of column indices and shuffle it
+                            List<Integer> columns = IntStream.range(0, m[0].length)
+                                    .boxed()
+                                    .collect(Collectors.toList());
+                            Collections.shuffle(columns);
+
+                            for (int i = 0; i < m.length; i++) {
+                                m[i][columns.get(i)] = 0; // Place a 0 in a randomly chosen (unique per row) column
+                            }
+
+                            List<Integer> indicesForOnes = new ArrayList<>(columns);
+                            // Shuffle indices again for random 1s placement, independent of 0s
+                            Collections.shuffle(indicesForOnes);
+
+                            for (int i = 0; i < size; i++) {
+                                if (m[i][indicesForOnes.get(i)] != 0) {
+                                    m[i][indicesForOnes.get(i)] = 1;
+                                }
+                            }
+                            return m;
+                        });
+        return intMatrixArb;
+    }
 
 
 }
