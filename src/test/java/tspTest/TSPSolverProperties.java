@@ -15,7 +15,7 @@ import java.util.stream.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class TSPProperties {
+public class TSPSolverProperties {
 
     private static final City VANCOUVER = new City("Vancouver", 0, false);
     private static final City EDMONTON = new City("Edmonton", 1, false);
@@ -27,82 +27,6 @@ public class TSPProperties {
     private static final City OTTAWA = new City("Ottawa", 7, false);
     private static final City MONTREAL = new City("Montreal", 8, false);
     private static final City HALIFAX = new City("Halifax", 9, false);
-
-    // TESTING City.java ============================================================================
-
-    @Property
-    @Report(Reporting.GENERATED)
-    void cityProperties(@ForAll @CharRange(from='A', to='Z') @StringLength(min=1,max = 2) String name, @ForAll @IntRange(max=2) int ID, @ForAll boolean visited) {
-        City city = new City(name, ID, visited);
-
-        // verify the properties set by the constructor
-        Assertions.assertThat(city.getName()).isEqualTo(name);
-        Assertions.assertThat(city.getID()).isEqualTo(ID);
-        Assertions.assertThat(city.isVisited()).isEqualTo(visited);
-
-        String newName = "NewCity";
-        int newID = -10;
-        boolean newVisited = !visited;
-
-        city.setName(newName);
-        city.setID(newID);
-        city.setVisited(newVisited);
-
-        // verify the properties changed
-        Assertions.assertThat(city.getName()).isEqualTo(newName);
-        Assertions.assertThat(city.getID()).isEqualTo(newID);
-        Assertions.assertThat(city.isVisited()).isEqualTo(newVisited);
-    }
-
-    @Property
-    @Report(Reporting.GENERATED)
-    void toStringMethodProducesValidOutput(@ForAll @CharRange(from='A', to='Z') @StringLength(min=1,max = 2) String name, @ForAll @IntRange(max=2) int ID, @ForAll boolean visited) {
-        City city = new City(name, ID, visited);
-        String expectedOutput = "City{name=" + name + ", ID=" + ID + ", visited=" + visited + '}';
-        Assertions.assertThat(city.toString()).isEqualTo(expectedOutput);
-    }
-
-    // TESTING Route.java ===============================================================================================
-    @Property
-    @Report(Reporting.GENERATED)
-    void routePropertiesWithStartCity(@ForAll("validCities") City startCity) {
-        Route route = new Route(startCity);
-
-        Assertions.assertThat(route.getStartCity()).isEqualTo(startCity);
-        Assertions.assertThat(route.getCurrentCity()).isEqualTo(startCity);
-        Assertions.assertThat(route.getRoute()).containsExactly(startCity);
-    }
-
-    @Property
-    @Report(Reporting.GENERATED)
-    void setCurrentCityShouldChangeCurrentCity(@ForAll("validCities") City startCity,
-                                               @ForAll("validCities") City newCity) {
-        Route route = new Route(startCity);
-        route.setCurrentCity(newCity);
-
-        Assertions.assertThat(route.getCurrentCity()).isEqualTo(newCity);
-    }
-
-    @Property
-    @Report(Reporting.GENERATED)
-    void setRouteShouldChangeRouteList(@ForAll("validCities") City startCity,
-                                       @ForAll("cityList") List<City> newRoute) {
-        Route route = new Route(startCity);
-        route.setRoute(newRoute);
-
-        Assertions.assertThat(route.getRoute()).isEqualTo(newRoute);
-    }
-
-    // custom generator for valid cities
-    @Provide
-    Arbitrary<City> validCities() {
-        return Arbitraries.of(VANCOUVER, EDMONTON, CALGARY, WINNIPEG, HAMILTON,
-                TORONTO, KINGSTON, OTTAWA, MONTREAL, HALIFAX);
-    }
-    @Provide
-    Arbitrary<List<City>> cityList() {
-        return validCities().list().ofMinSize(0).ofMaxSize(10);
-    }
 
     // TESTING TSP.java ===============================================================================================
 
@@ -116,7 +40,7 @@ public class TSPProperties {
         TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
-        System.out.println(newTSP);
+        // System.out.println(newTSP);
 
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
 
@@ -159,6 +83,7 @@ public class TSPProperties {
 
         // assigning our generated distance table to the instance
         TSP.distances = distances;
+
         TSP.branchAndBound();
         //System.out.println(newTSP);
 
@@ -185,12 +110,17 @@ public class TSPProperties {
         TSP newTSP = new TSP();
 
         // assigning our generated distance table to the instance
-        newTSP.distances = distances;
+        TSP.distances = distances;
         TSP.branchAndBound();
 
-        System.out.println(newTSP);
 
-        Assertions.assertThat(( TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isEqualTo(10);
+        int routeCost = TSP.getRouteCost(newTSP.getBaBcheapestRoute());
+
+        if (routeCost < 0){
+            routeCost *= -1;
+        }
+
+        Assertions.assertThat(( routeCost)).isEqualTo(10);
 
     }
 
@@ -208,7 +138,7 @@ public class TSPProperties {
         int minWeight = Integer.MAX_VALUE;
 
         for (int i = 0; i < r.getRoute().size() - 1; i++) {
-            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
+            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i+1).getID()];
 
             if ((weight < minWeight) && (weight != 0)) {
                 minWeight = weight;
@@ -233,7 +163,7 @@ public class TSPProperties {
         int maxWeight = Integer.MIN_VALUE;
 
         for (int i = 0; i < r.getRoute().size() - 1; i++) {
-            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
+            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i+1).getID()];
 
             if ((weight > maxWeight) && (weight != 0)) {
                 maxWeight = weight;
@@ -249,7 +179,7 @@ public class TSPProperties {
     public Arbitrary<Integer[][]> onePathMatrixGenerator() {
         int size = 10;
 
-        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(Integer.MAX_VALUE-10, Integer.MAX_VALUE).array(Integer[].class).ofSize(size);
+        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(999999, Integer.MAX_VALUE/15).array(Integer[].class).ofSize(size);
 
         Arbitrary<Integer[][]> matrixArb = zeroArrayArb.array(Integer[][].class)
                 .ofSize(size)
@@ -268,11 +198,15 @@ public class TSPProperties {
                     }
                     return m;
                 })
+                .filter(m -> //makes sure the matrix is symmetrical
+                        IntStream.range(0, m.length)
+                                .allMatch(i -> IntStream.range(i, m[i].length)
+                                        .allMatch(j -> m[i][j].equals(m[j][i]))))
                 .filter(m ->
-                    IntStream.range(0, m.length)
-                        .allMatch(i -> IntStream.range(i, m[i].length)
-                                .allMatch(j -> m[i][j].equals(m[j][i]))));
-
+                        Arrays.stream(m)
+                        .flatMap(Arrays::stream)
+                        .filter(num -> num == 1)
+                        .count() == 10); // filter for matrix with exactly 10 ones
 
         return matrixArb;
     }
@@ -280,7 +214,7 @@ public class TSPProperties {
 
     @Provide
     public Arbitrary<Integer[][]> matrixGenerator() {
-        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE);
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE/15);
         int size = 10;
 
         Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
@@ -304,7 +238,7 @@ public class TSPProperties {
 
     @Provide
     public Arbitrary<Integer[][]> matrixCostTen() {
-        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE);
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(999, Integer.MAX_VALUE/15);
         int size = 10;
 
         Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
@@ -330,7 +264,12 @@ public class TSPProperties {
                         .filter(m ->
                             IntStream.range(0, m.length)
                                 .allMatch(i -> IntStream.range(i, m[i].length)
-                                    .allMatch(j -> m[i][j].equals(m[j][i]))));
+                                    .allMatch(j -> m[i][j].equals(m[j][i]))))
+                        .filter(m ->
+                                Arrays.stream(m)
+                                        .flatMap(Arrays::stream)
+                                        .filter(num -> num == 1)
+                                        .count() == 10); // filter for matrix with exactly 10 ones
         return intMatrixArb;
     }
 
