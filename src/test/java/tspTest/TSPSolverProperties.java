@@ -173,13 +173,195 @@ public class TSPSolverProperties {
         Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isLessThan(maxWeight * 11);
     }
 
+//OPERATIONS-----------------------------------------------------------
 
-//GENERATORS------------------------------------------------------------
+    /*
+     1)
+     if you get a route r=[c1,c2,...,cn] of weight/length w for a distance matrix m1, and you add
+     e to the weight of a single edge (w/o making the weight of the edge be MAX_VALUE) to get matrix m2,
+     then the length of the route that you get (same or different) is between w and (w+e).
+     */
+    @Property
+    @Report(Reporting.GENERATED)
+    void testAddingWeight(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+        
+        int cost1 = newTSP.getBaBcheapestCost();;
+        
+        Random rand = new Random();
+        int extra = rand.nextInt(100); // random number between 1 to 100
+        
+        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+        
+        for (int i = 0; i < distances.length; i++) {
+            System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
+        }
+        
+        Random rand1 = new Random();
+        Random rand2 = new Random();
+        int iPos, jPos;
+        do {
+            iPos = rand1.nextInt(newDistances.length);
+            jPos = rand2.nextInt(newDistances[0].length);
+        } while (iPos == jPos);
+
+        newDistances[iPos][jPos] += extra;
+        newDistances[jPos][iPos] += extra;
+        
+        TSP.distances = newDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isBetween(cost1, cost1+extra);
+    }
+
+    /*
+    2)
+     if you get a route r=[c1,c2,...,cn] of weight/length w for a distance matrix m1, and you subtract
+     e from the weight of a single edge to get matrix m2, then the length of the route should be (w-e)
+     */
+    @Property
+    @Report(Reporting.GENERATED)
+    void testSubtractingWeight(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        int cost1 = newTSP.getBaBcheapestCost();;
+
+
+        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+
+        for (int i = 0; i < distances.length; i++) {
+            System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
+        }
+
+        Random rand1 = new Random();
+        Random rand2 = new Random();
+        int iPos, jPos;
+        do {
+            iPos = rand1.nextInt(newDistances.length);
+            jPos = rand2.nextInt(newDistances[0].length);
+        } while (iPos == jPos);
+
+        Random rand = new Random();
+        int extra = rand.nextInt(newDistances[iPos][jPos]); // random number between 1 to the value at iPos, jPos
+
+        newDistances[iPos][jPos] -= extra;
+        newDistances[jPos][iPos] -= extra;
+
+        TSP.distances = newDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isBetween(cost1 - extra, cost1);
+    }
+
+    /*
+    3)
+    if i multiple the  distance matrix m1 by 3 to become m2, then the cost of m2 should be m1*3
+     */
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testMultiplyingMatrix(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        int cost1 = newTSP.getBaBcheapestCost();;
+
+
+        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+
+        for (int i = 0; i < newDistances.length; i++) {
+            for (int j = 0; j < newDistances[i].length; j++) {
+                newDistances[i][j] = (distances[i][j]*2);
+            }
+        }
+
+        TSP.distances = newDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isEqualTo(cost1*2);
+    }
+
+    /*
+    4)
+    changing the order of the distance matrix shouldn't change the cost of the matrix
+     */
+
+    @Property
+    @Report(Reporting.GENERATED)
+    void testShufflingMatrix(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        int cost1 = newTSP.getBaBcheapestCost();
+
+        Integer[][] shuffledDistances = shuffleMatrix(distances);
+
+        TSP.distances = shuffledDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isEqualTo(cost1);
+    }
+
+    private Integer[][] shuffleMatrix(Integer[][] distances) {
+        int size = distances.length;
+        Integer[][] shuffledMatrix = new Integer[size][size];
+
+        for (int i = 0; i < size; i++) {
+            shuffledMatrix[i][i] = 0;  //  diagonal stays 0
+        }
+
+        // shuffle the non-diagonal elements
+        List<Integer> indices = IntStream.range(0, size).boxed().collect(Collectors.toList());
+        Collections.shuffle(indices);
+
+        for (int i = 0; i < size; i++) {
+            int newRow = indices.get(i);
+            for (int j = 0; j < size; j++) {
+                if (i != j) { // skip diagonal elements
+                    int newCol = indices.get(j);
+                    shuffledMatrix[newRow][newCol] = distances[i][j];
+                }
+            }
+        }
+
+        return shuffledMatrix;
+    }
+
+    /*
+    any other opertations go here...
+     */
+
+
+
+
+    //GENERATORS------------------------------------------------------------
     @Provide
     public Arbitrary<Integer[][]> onePathMatrixGenerator() {
         int size = 10;
 
-        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(999999, Integer.MAX_VALUE/15).array(Integer[].class).ofSize(size);
+        Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(9999, Integer.MAX_VALUE/50).array(Integer[].class).ofSize(size);
 
         Arbitrary<Integer[][]> matrixArb = zeroArrayArb.array(Integer[][].class)
                 .ofSize(size)
@@ -191,7 +373,7 @@ public class TSPSolverProperties {
                     // Shuffle indices  for random 1s placement
                     Collections.shuffle(indices);
 
-                    for (int i = 0; i < size; i++) {
+                    for (int i = 0; i < (size/2); i++) {
                         if (m[i][indices.get(i)] != 0) {
                             m[i][indices.get(i)] = 1;
                         }
@@ -214,7 +396,7 @@ public class TSPSolverProperties {
 
     @Provide
     public Arbitrary<Integer[][]> matrixGenerator() {
-        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE/15);
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE/50);
         int size = 10;
 
         Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
@@ -238,7 +420,7 @@ public class TSPSolverProperties {
 
     @Provide
     public Arbitrary<Integer[][]> matrixCostTen() {
-        Arbitrary<Integer> numArb = Arbitraries.integers().between(999, Integer.MAX_VALUE/15);
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(999, Integer.MAX_VALUE/50);
         int size = 10;
 
         Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
@@ -254,7 +436,7 @@ public class TSPSolverProperties {
                             // Shuffle indices  for random 1s placement
                             Collections.shuffle(indices);
 
-                            for (int i = 0; i < size; i++) {
+                            for (int i = 0; i < (size/2); i++) {
                                 if (m[i][indices.get(i)] != 0) {
                                     m[i][indices.get(i)] = 1;
                                 }
