@@ -176,14 +176,14 @@ public class TSPSolverProperties {
 //OPERATIONS-----------------------------------------------------------
 
     /*
-     1)
+     1) WORKS
      if you get a route r=[c1,c2,...,cn] of weight/length w for a distance matrix m1, and you add
      e to the weight of a single edge (w/o making the weight of the edge be MAX_VALUE) to get matrix m2,
      then the length of the route that you get (same or different) is between w and (w+e).
      */
     @Property
     @Report(Reporting.GENERATED)
-    void testAddingWeight(@ForAll("matrixGenerator") Integer[][] distances){
+    void testAddingWeight(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("extraWeight") int extra, @ForAll("getPosition") int[] position){
         // tsp instance
         TSP newTSP = new TSP();
 
@@ -192,23 +192,11 @@ public class TSPSolverProperties {
         TSP.branchAndBound();
         
         int cost1 = newTSP.getBaBcheapestCost();;
-        
-        Random rand = new Random();
-        int extra = rand.nextInt(100); // random number between 1 to 100
-        
-        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
-        
-        for (int i = 0; i < distances.length; i++) {
-            System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
-        }
-        
-        Random rand1 = new Random();
-        Random rand2 = new Random();
-        int iPos, jPos;
-        do {
-            iPos = rand1.nextInt(newDistances.length);
-            jPos = rand2.nextInt(newDistances[0].length);
-        } while (iPos == jPos);
+
+        Integer[][] newDistances = distances.clone();
+
+        int iPos = position[0];
+        int jPos = position[1];
 
         newDistances[iPos][jPos] += extra;
         newDistances[jPos][iPos] += extra;
@@ -221,13 +209,13 @@ public class TSPSolverProperties {
     }
 
     /*
-    2)
+    2) WORKS
      if you get a route r=[c1,c2,...,cn] of weight/length w for a distance matrix m1, and you subtract
      e from the weight of a single edge to get matrix m2, then the length of the route should be (w-e)
      */
     @Property
     @Report(Reporting.GENERATED)
-    void testSubtractingWeight(@ForAll("matrixGenerator") Integer[][] distances){
+    void testSubtractingWeight(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("getPosition") int[] position){
         // tsp instance
         TSP newTSP = new TSP();
 
@@ -235,7 +223,7 @@ public class TSPSolverProperties {
         TSP.distances = distances;
         TSP.branchAndBound();
 
-        int cost1 = newTSP.getBaBcheapestCost();;
+        int cost1 = newTSP.getBaBcheapestCost();
 
 
         Integer[][] newDistances = new Integer[distances.length][distances[0].length];
@@ -244,13 +232,8 @@ public class TSPSolverProperties {
             System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
         }
 
-        Random rand1 = new Random();
-        Random rand2 = new Random();
-        int iPos, jPos;
-        do {
-            iPos = rand1.nextInt(newDistances.length);
-            jPos = rand2.nextInt(newDistances[0].length);
-        } while (iPos == jPos);
+        int iPos = position[0];
+        int jPos = position[1];
 
         Random rand = new Random();
         int extra = rand.nextInt(newDistances[iPos][jPos]); // random number between 1 to the value at iPos, jPos
@@ -266,13 +249,13 @@ public class TSPSolverProperties {
     }
 
     /*
-    3)
+    3) FIX
     if i multiple the  distance matrix m1 by 3 to become m2, then the cost of m2 should be m1*3
      */
 
     @Property
     @Report(Reporting.GENERATED)
-    void testMultiplyingMatrix(@ForAll("matrixGenerator") Integer[][] distances){
+    void testMultiplyingMatrix(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("multiplier") int multiplier){
         // tsp instance
         TSP newTSP = new TSP();
 
@@ -282,12 +265,11 @@ public class TSPSolverProperties {
 
         int cost1 = newTSP.getBaBcheapestCost();;
 
-
-        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+        Integer[][] newDistances = distances.clone();
 
         for (int i = 0; i < newDistances.length; i++) {
             for (int j = 0; j < newDistances[i].length; j++) {
-                newDistances[i][j] = (distances[i][j]*2);
+                newDistances[i][j] *= multiplier;
             }
         }
 
@@ -295,11 +277,11 @@ public class TSPSolverProperties {
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
-        Assertions.assertThat(cost2).isEqualTo(cost1*2);
+        Assertions.assertThat(cost2).isEqualTo(cost1*multiplier);
     }
 
     /*
-    4)
+    4) WORKS
     changing the order of the distance matrix shouldn't change the cost of the matrix
      */
 
@@ -350,8 +332,102 @@ public class TSPSolverProperties {
     }
 
     /*
-    any other opertations go here...
+    5)
+    adding weight e to each edge in the distance matrix should increase the cost for the cheapest travel by e*the number
+    of cities
      */
+    //@Property
+    @Report(Reporting.GENERATED)
+    void testAddingWeightToAll(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("extraWeight") int extra){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        int cost1 = newTSP.getBaBcheapestCost();;
+
+        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+
+        for (int i = 0; i < distances.length; i++) {
+            System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
+        }
+
+        for (int i = 0; i< distances.length; i++){
+            for (int j = 0; j<distances.length; j++){
+                if (i != j){
+                    newDistances[i][j] += extra;
+                }
+            }
+        }
+
+        TSP.distances = newDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isEqualTo(cost1+(extra* (distances.length+1)));
+    }
+
+    /*
+    6)
+    subtracting weight e to each edge in the distance matrix should decrease the cost for the cheapest travel by e*the number
+    of cities
+     */
+    //@Property
+    @Report(Reporting.GENERATED)
+    void testSubtractingWeightFromAll(@ForAll("matrixGenerator") Integer[][] distances){
+        // tsp instance
+        TSP newTSP = new TSP();
+
+        // assigning our generated distance table to the instance
+        TSP.distances = distances;
+        TSP.branchAndBound();
+
+        int cost1 = newTSP.getBaBcheapestCost();
+
+
+        Integer[][] newDistances = new Integer[distances.length][distances[0].length];
+
+        for (int i = 0; i < distances.length; i++) {
+            System.arraycopy(distances[i], 0, newDistances[i], 0, distances[i].length);
+        }
+
+        int minVal = Arrays.stream(distances)
+                .flatMapToInt(row -> Arrays.stream(row).mapToInt(Integer::intValue))
+                .filter(i -> i != 0)
+                .min()
+                .orElse(1);
+
+        Random rand = new Random();
+        int extra = rand.nextInt(minVal); // random int smaller then the min value thats not 1 in the distance matrix
+
+
+        for (int i = 0; i< distances.length; i++){
+            for (int j = 0; j<distances.length; j++){
+                if (i != j){
+                    newDistances[i][j] -= extra;
+                }
+            }
+        }
+
+        TSP.distances = newDistances;
+        TSP.branchAndBound();
+        int cost2 = newTSP.getBaBcheapestCost();
+
+        Assertions.assertThat(cost2).isEqualTo(cost1-(extra* distances.length));
+    }
+
+
+    /*
+    any other opertations go here...
+
+    -adding/removing an edge
+    -generators for additional weight cost and positions
+    -weight class
+
+     */
+
 
 
 
@@ -396,7 +472,7 @@ public class TSPSolverProperties {
 
     @Provide
     public Arbitrary<Integer[][]> matrixGenerator() {
-        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, Integer.MAX_VALUE/50);
+        Arbitrary<Integer> numArb = Arbitraries.integers().between(1, 500);
         int size = 10;
 
         Arbitrary<Integer[]> intArrayArb = numArb.array(Integer[].class).ofSize(size);
@@ -453,6 +529,26 @@ public class TSPSolverProperties {
                                         .filter(num -> num == 1)
                                         .count() == 10); // filter for matrix with exactly 10 ones
         return intMatrixArb;
+    }
+
+    //GENERATORS FOR OPERATIONS
+    @Provide
+    Arbitrary<Integer> extraWeight() {
+        return Arbitraries.integers().between(1, 50);  // generates random number between 1 to 50
+    }
+
+    @Provide
+    Arbitrary<Integer> multiplier() {
+        return Arbitraries.integers().between(1, 5);  // generates random number between 1 to 50
+    }
+
+    @Provide
+    Arbitrary<int[]> getPosition() {
+        return Combinators.combine(
+                        Arbitraries.integers().between(0, 9), // considering the matrix will be 10x10
+                        Arbitraries.integers().between(0, 9))
+                .as((i, j) -> new int[] {i, j})
+                .filter(pos -> pos[0] != pos[1]); // i and j should not be same
     }
 
 

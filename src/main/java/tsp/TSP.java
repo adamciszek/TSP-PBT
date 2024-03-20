@@ -159,7 +159,7 @@ public class TSP {
 
 		// Remove halifax from permutations as always start and end
 		List<Integer> cityNums = new ArrayList<Integer>();
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < distances.length; i++) {
 			cityNums.add(i);
 		}
 
