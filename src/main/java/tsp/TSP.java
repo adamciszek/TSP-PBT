@@ -153,13 +153,13 @@ public class TSP {
 	 * Calculates the shortest route using branch and bound algorithm
 	 */
 	public static void branchAndBound() {
-		System.out.println("branchAndBound:");
+		//System.out.println("branchAndBound:");
 		// Setup city list
 		resetLists();
 
 		// Remove halifax from permutations as always start and end
 		List<Integer> cityNums = new ArrayList<Integer>();
-		for (int i = 0; i < distances.length; i++) {
+		for (int i = 0; i < distances.length-1; i++) {
 			cityNums.add(i);
 		}
 
@@ -167,8 +167,8 @@ public class TSP {
 		permute(new Route(), cityNums, false);
 		// Output the number of complete permutations generated NOTE: This is also the
 		// number of times the optimal route improved
-		System.out.println("\tComplete Permutations: " + BaBRoutePerms.size());
-		System.out.println("\t" + BaBcheapestRoute.toString() + "\n\tCost: " + getRouteCost(BaBcheapestRoute));
+		//System.out.println("\tComplete Permutations: " + BaBRoutePerms.size());
+		//System.out.println("\t" + BaBcheapestRoute.toString() + "\n\tCost: " + getRouteCost(BaBcheapestRoute));
 	}
 
 	/************************************************************************************************************/
