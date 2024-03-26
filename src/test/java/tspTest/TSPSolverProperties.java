@@ -30,56 +30,40 @@ public class TSPSolverProperties {
 
     @Property
     @Report(Reporting.GENERATED)
-    void testTSPWithOnePath(@ForAll("onePathMatrixGenerator") Integer[][] distances) {
-
+    void testTSPWithOnePath(@ForAll("onePathMatrixGenerator") Weight distances) {
         TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
-        // System.out.println(newTSP);
-
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
-
         List<Route> routes = newTSP.getBaBRoutePerms(); //getting all possible permutations
 
         // check if routes contain the expected solution
         Assertions.assertThat(routes).contains(sol);
-
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testNumCities(@ForAll("matrixGenerator") Integer[][] distances) {
+    void testNumCities(@ForAll("matrixGenerator") Weight distances) {
         //test that the number of cities in the path is exactly n
-
         TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
-        // System.out.println(newTSP);
-
 
         int actualNumOfCities = 10;
+        int numOfCities = newTSP.getBaBcheapestRoute().getRoute().size() - 1; // must subtract 1 since solution set contains first city twice
 
-        int NumOfCities = newTSP.getBaBcheapestRoute().getRoute().size()-1; // must subtract 1 since solution set contains first city twice
-
-        Assertions.assertThat(NumOfCities).isEqualTo(actualNumOfCities);
-
+        Assertions.assertThat(numOfCities).isEqualTo(actualNumOfCities);
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testUniqueCities(@ForAll("matrixGenerator") Integer[][] distances) {
+    void testUniqueCities(@ForAll("matrixGenerator") Weight distances) {
         //test that each city is only visited once
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
-
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
-        //System.out.println(newTSP);
 
         Route sol = newTSP.getBaBcheapestRoute(); // getting the 'cheapest route' which is the solution
-
         List<City> cities = sol.getRoute(); //all cities in the solution (contains first city twice)
-
-        List<City> uniqueCities = new ArrayList<>();; //contains unique cities in solution
+        List<City> uniqueCities = new ArrayList<>(); //contains unique cities in solution
 
         for (City city : cities) {
             if (!uniqueCities.contains(city)) {
@@ -87,77 +71,65 @@ public class TSPSolverProperties {
             }
         }
 
-        Assertions.assertThat(uniqueCities.size()).isEqualTo(cities.size()-1);
-
+        Assertions.assertThat(uniqueCities.size()).isEqualTo(cities.size() - 1);
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testCostIsTen(@ForAll("onePathMatrixGenerator") Integer[][] distances){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testCostIsTen(@ForAll("onePathMatrixGenerator") Weight distances) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
-
 
         int routeCost = TSP.getRouteCost(newTSP.getBaBcheapestRoute());
 
-        if (routeCost < 0){
+        if (routeCost < 0) {
             routeCost *= -1;
         }
 
-        Assertions.assertThat(( routeCost)).isEqualTo(10);
-
+        Assertions.assertThat(routeCost).isEqualTo(10);
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testCostIsGreaterThanMin(@ForAll("matrixGenerator") Integer[][] distances){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testCostIsGreaterThanMin(@ForAll("matrixGenerator") Weight distances) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
         Route r = newTSP.getBaBcheapestRoute();
         int minWeight = Integer.MAX_VALUE;
 
         for (int i = 0; i < r.getRoute().size() - 1; i++) {
-            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i+1).getID()];
+            int weight = distances.getWeight(r.getRoute().get(i).getID(), r.getRoute().get(i + 1).getID());
 
             if ((weight < minWeight) && (weight != 0)) {
                 minWeight = weight;
             }
         }
 
-        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isGreaterThan(minWeight);
-
+        Assertions.assertThat(TSP.getRouteCost(newTSP.getBaBcheapestRoute())).isGreaterThan(minWeight);
     }
 
     @Property
     @Report(Reporting.GENERATED)
-    void testCostIsLessThanMax(@ForAll("matrixGenerator") Integer[][] distances){
-
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testCostIsLessThanMax(@ForAll("matrixGenerator") Weight distances) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
         Route r = newTSP.getBaBcheapestRoute();
         int maxWeight = Integer.MIN_VALUE;
 
         for (int i = 0; i < r.getRoute().size() - 1; i++) {
-            int weight = distances[r.getRoute().get(i).getID()][r.getRoute().get(i+1).getID()];
+            int weight = distances.getWeight(r.getRoute().get(i).getID(), r.getRoute().get(i + 1).getID());
 
             if ((weight > maxWeight) && (weight != 0)) {
                 maxWeight = weight;
             }
         }
 
-        Assertions.assertThat((TSP.getRouteCost(newTSP.getBaBcheapestRoute()))).isLessThan(maxWeight * 11);
-
+        Assertions.assertThat(TSP.getRouteCost(newTSP.getBaBcheapestRoute())).isLessThan(maxWeight * 11);
     }
 
-//OPERATIONS-----------------------------------------------------------
+    //OPERATIONS-----------------------------------------------------------
 
     /*
      1) WORKS
@@ -167,26 +139,21 @@ public class TSPSolverProperties {
      */
     @Property
     @Report(Reporting.GENERATED)
-    void testAddingWeight(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("extraWeight") int extra, @ForAll("getPosition") int[] position){
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testAddingWeight(@ForAll("matrixGenerator") Weight distances, @ForAll("extraWeight") int extra, @ForAll("getPosition") int[] position) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
-        int cost1 = newTSP.getBaBcheapestCost();;
+        int cost1 = newTSP.getBaBcheapestCost();
 
-        Integer[][] newDistances = distances.clone();
+        Weight newDistances = new Weight(distances.getWeight().clone());
 
-        int iPos = position[0];
-        int jPos = position[1];
+        newDistances.addExtraToPos(extra, position);
 
-        newDistances[iPos][jPos] += extra;
-        newDistances[jPos][iPos] += extra;
-
-        TSP.distances = newDistances;
+        TSP.distances = (newDistances);
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
-        Assertions.assertThat(cost2).isBetween(cost1, cost1+extra);
+        Assertions.assertThat(cost2).isBetween(cost1, cost1 + extra);
     }
 
     /*
@@ -196,26 +163,21 @@ public class TSPSolverProperties {
      */
     @Property
     @Report(Reporting.GENERATED)
-    void testSubtractingWeight(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("getPosition") int[] position){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testSubtractingWeight(@ForAll("matrixGenerator") Weight distances, @ForAll("getPosition") int[] position) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
         int cost1 = newTSP.getBaBcheapestCost();
 
-        Integer[][] newDistances = distances.clone();
+        Weight newDistances = new Weight(distances.getWeight().clone());
 
-        int iPos = position[0];
-        int jPos = position[1];
 
         Random rand = new Random();
-        int extra = rand.nextInt(newDistances[iPos][jPos]); // random number between 1 to the value at iPos, jPos
+        int extra = rand.nextInt(newDistances.getWeight(position[0], position[1])); // random number between 1 to the value at iPos, jPos
 
-        newDistances[iPos][jPos] -= extra;
-        newDistances[jPos][iPos] -= extra;
+        newDistances.subtractExtraFromPos(extra, position);
 
-        TSP.distances = newDistances;
+        TSP.distances = (newDistances);
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
@@ -226,61 +188,51 @@ public class TSPSolverProperties {
     3) FIX
     if i multiple the  distance matrix m1 by 3 to become m2, then the cost of m2 should be m1*3
      */
-
     @Property
     @Report(Reporting.GENERATED)
-    void testMultiplyingMatrix(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("multiplier") int multiplier){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testMultiplyingMatrix(@ForAll("matrixGenerator") Weight distances, @ForAll("multiplier") int multiplier) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
-        int cost1 = newTSP.getBaBcheapestCost();;
+        int cost1 = newTSP.getBaBcheapestCost();
 
-        for (int i = 0; i < distances.length; i++) {
-            for (int j = 0; j < distances.length; j++) {
-                distances[i][j] *= multiplier;
-            }
-        }
+        Weight newDistances = new Weight(distances.getWeight().clone());
+        newDistances.multiplyByM(multiplier);
 
-        TSP.distances = distances;
+        TSP.distances = (newDistances);
         TSP.branchAndBound();
-        System.out.println(newTSP);
         int cost2 = newTSP.getBaBcheapestCost();
 
-        Assertions.assertThat(cost2).isEqualTo(cost1*multiplier);
+        Assertions.assertThat(cost2).isEqualTo(cost1 * multiplier);
     }
 
     /*
     4) WORKS
     changing the order of the distance matrix shouldn't change the cost of the matrix
      */
-
     @Property
     @Report(Reporting.GENERATED)
-    void testShufflingMatrix(@ForAll("matrixGenerator") Integer[][] distances){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testShufflingMatrix(@ForAll("matrixGenerator") Weight distances) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
         int cost1 = newTSP.getBaBcheapestCost();
 
-        Integer[][] shuffledDistances = shuffleMatrix(distances);
+        Weight shuffledDistances = shuffleMatrix(distances);
 
-        TSP.distances = shuffledDistances;
+        TSP.distances = (shuffledDistances);
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
         Assertions.assertThat(cost2).isEqualTo(cost1);
     }
 
-    private Integer[][] shuffleMatrix(Integer[][] distances) {
-        int size = distances.length;
+    private Weight shuffleMatrix(Weight distances) {
+        int size = distances.getSize();
         Integer[][] shuffledMatrix = new Integer[size][size];
 
         for (int i = 0; i < size; i++) {
-            shuffledMatrix[i][i] = 0;  //  diagonal stays 0
+            shuffledMatrix[i][i] = 0; //  diagonal stays 0
         }
 
         // shuffle the non-diagonal elements
@@ -292,12 +244,12 @@ public class TSPSolverProperties {
             for (int j = 0; j < size; j++) {
                 if (i != j) { // skip diagonal elements
                     int newCol = indices.get(j);
-                    shuffledMatrix[newRow][newCol] = distances[i][j];
+                    shuffledMatrix[newRow][newCol] = distances.getWeight(i, j);
                 }
             }
         }
 
-        return shuffledMatrix;
+        return new Weight(shuffledMatrix);
     }
 
     /*
@@ -307,87 +259,26 @@ public class TSPSolverProperties {
      */
     @Property
     @Report(Reporting.GENERATED)
-    void testAddingWeightToAll(@ForAll("matrixGenerator") Integer[][] distances, @ForAll("extraWeight") int extra){
-
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
-        TSP.branchAndBound();
-
-        int cost1 = newTSP.getBaBcheapestCost();;
-
-        for (int i = 0; i < distances.length; i++) {
-            for (int j = 0; j < distances[i].length; j++) {
-                if (i != j) { // skip diagonal elements
-                    distances[i][j] += extra;
-                }
-            }
-        }
-
-        TSP.distances = distances;
-        TSP.branchAndBound();
-        System.out.println(newTSP);
-        int cost2 = newTSP.getBaBcheapestCost();
-
-        Assertions.assertThat(cost2).isEqualTo(cost1 + (extra * (distances.length)));
-    }
-
-    /*
-    6)
-    subtracting weight e to each edge in the distance matrix should decrease the cost for the cheapest travel by e*the number
-    of cities
-     */
-    //@Property
-    @Report(Reporting.GENERATED)
-    void testSubtractingWeightFromAll(@ForAll("matrixGenerator") Integer[][] distances){
-
-        // assigning our generated distance table to the instance
-        TSP.distances = distances;
+    void testAddingWeightToAll(@ForAll("matrixGenerator") Weight distances, @ForAll("extraWeight") int extra) {
+        TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
 
         int cost1 = newTSP.getBaBcheapestCost();
 
+        Weight newDistances = new Weight(distances.getWeight().clone());
+        newDistances.addExtraToAll(extra);
 
-
-        int minVal = Arrays.stream(distances)
-                .flatMapToInt(row -> Arrays.stream(row).mapToInt(Integer::intValue))
-                .filter(i -> i != 0)
-                .min()
-                .orElse(1);
-
-        Random rand = new Random();
-        int extra = rand.nextInt(minVal); // random int smaller then the min value thats not 1 in the distance matrix
-
-
-        for (int i = 0; i < distances.length; i++) {
-            for (int j = 0; j < distances[i].length; j++) {
-                if (i != j) { // skip diagonal elements
-                    distances[i][j] -= extra;
-                }
-            }
-        }
-
+        TSP.distances = (newDistances);
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
-        Assertions.assertThat(cost2).isEqualTo(cost1-(extra* distances.length));
+        Assertions.assertThat(cost2).isEqualTo(cost1 + (extra * (distances.getSize())));
     }
-
-
-    /*
-    any other opertations go here...
-
-    -adding/removing an edge
-    -weight class
-     */
-
-
-
 
 
     //GENERATORS------------------------------------------------------------
     @Provide
-    public Arbitrary<Integer[][]> onePathMatrixGenerator() {
+    public Arbitrary<Weight> onePathMatrixGenerator() {
         int size = 10;
 
         Arbitrary<Integer[]> zeroArrayArb = Arbitraries.integers().between(100, 10000).array(Integer[].class).ofSize(size);
@@ -402,7 +293,7 @@ public class TSPSolverProperties {
                     // Shuffle indices  for random 1s placement
                     Collections.shuffle(indices);
 
-                    for (int i = 0; i < (size/2); i++) {
+                    for (int i = 0; i < (size / 2); i++) {
                         if (m[i][indices.get(i)] != 0) {
                             m[i][indices.get(i)] = 1;
                             m[indices.get(i)][i] = 1;
@@ -415,12 +306,11 @@ public class TSPSolverProperties {
                                 .allMatch(i -> IntStream.range(i, m[i].length)
                                         .allMatch(j -> m[i][j].equals(m[j][i]))));
 
-        return matrixArb;
+        return matrixArb.map(Weight::new);
     }
 
-
     @Provide
-    public Arbitrary<Integer[][]> matrixGenerator() {
+    public Arbitrary<Weight> matrixGenerator() {
         Arbitrary<Integer> numArb = Arbitraries.integers().between(1, 500);
         int size = 10;
 
@@ -436,13 +326,11 @@ public class TSPSolverProperties {
                             return m;
                         })
                         .filter(m ->
-                            IntStream.range(0, m.length)
-                                .allMatch(i -> IntStream.range(i, m[i].length)
-                                    .allMatch(j -> m[i][j].equals(m[j][i]))));
+                                IntStream.range(0, m.length)
+                                        .allMatch(i -> IntStream.range(i, m[i].length)
+                                                .allMatch(j -> m[i][j].equals(m[j][i]))));
 
-
-
-        return intMatrixArb;
+        return intMatrixArb.map(Weight::new);
     }
 
 
@@ -454,7 +342,7 @@ public class TSPSolverProperties {
 
     @Provide
     Arbitrary<Integer> multiplier() {
-        return Arbitraries.integers().between(1, 5);  // generates random number between 1 to 50
+        return Arbitraries.integers().between(1, 5);  // generates random number between 1 to 5
     }
 
     @Provide

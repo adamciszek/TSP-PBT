@@ -11,6 +11,9 @@ public class Weight{
         this.values = values;
     }
 
+    public Integer[][] getWeight(){
+        return this.values;
+    }
     public int getSize() {
         return values.length;
     }
@@ -57,4 +60,18 @@ public class Weight{
             }
         }
     }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+            for (int j = 0; j < values[i].length; j++) {
+                sb.append(values[i][j]).append("\t");
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+
 }

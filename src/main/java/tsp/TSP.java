@@ -5,7 +5,8 @@ import java.util.List;
 
 public class TSP {
 	// Distance lookup table
-	public static Integer[][] distances = { { 0, 129, 119, 43, 98, 98, 86, 52, 85, 44 },
+	public static Weight distances = new Weight(new Integer[][] {
+			{ 0, 129, 119, 43, 98, 98, 86, 52, 85, 44 },
 			{ 129, 0, 88, 149, 152, 57, 55, 141, 93, 86 },
 			{ 119, 88, 0, 97, 72, 72, 42, 72, 35, 92 },
 			{ 43, 149, 97, 0, 54, 119, 107, 28, 64, 60 },
@@ -14,7 +15,8 @@ public class TSP {
 			{ 86, 55, 42, 107, 85, 35, 0, 80, 37, 44 },
 			{ 52, 141, 72, 28, 39, 111, 80, 0, 38, 52 },
 			{ 85, 93, 35, 64, 48, 77, 37, 38, 0, 47 },
-			{ 44, 86, 92, 60, 90, 56, 44, 52, 47, 0 }, };
+			{ 44, 86, 92, 60, 90, 56, 44, 52, 47, 0 }
+	});
 
 	// Generic variables
 	// Populate a list with the cities
@@ -32,7 +34,7 @@ public class TSP {
 
 	/**
 	 * Main function
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -117,13 +119,13 @@ public class TSP {
 
 			for (int i = 0; i < 9; i++) {
 				// If closer and not self and not visited
-				if (distances[nearestRoute.getCurrentCity().getID()][i] < neighbourDistance
-						&& distances[nearestRoute.getCurrentCity().getID()][i] != 0
+				if (distances.getWeight(nearestRoute.getCurrentCity().getID(), i) < neighbourDistance
+						&& distances.getWeight(nearestRoute.getCurrentCity().getID(), i) != 0
 						&& cities.get(i).isVisited() == false) {
 
 					// Update closest neighbour
 					neighbourCity = cities.get(i);
-					neighbourDistance = distances[nearestRoute.getCurrentCity().getID()][i];
+					neighbourDistance = distances.getWeight(nearestRoute.getCurrentCity().getID(), i);
 				}
 			}
 
@@ -139,7 +141,7 @@ public class TSP {
 		}
 
 		// Add cost to return to Stoke
-		routeCost += distances[nearestRoute.getStartCity().getID()][nearestRoute.getCurrentCity().getID()];
+		routeCost += distances.getWeight(nearestRoute.getStartCity().getID(), nearestRoute.getCurrentCity().getID());
 
 		// Add stoke to route end
 		nearestRoute.getRoute().add(cities.get(9));
@@ -153,13 +155,12 @@ public class TSP {
 	 * Calculates the shortest route using branch and bound algorithm
 	 */
 	public static void branchAndBound() {
-		//System.out.println("branchAndBound:");
 		// Setup city list
 		resetLists();
 
 		// Remove halifax from permutations as always start and end
 		List<Integer> cityNums = new ArrayList<Integer>();
-		for (int i = 0; i < distances.length-1; i++) {
+		for (int i = 0; i < distances.getSize() - 1; i++) {
 			cityNums.add(i);
 		}
 
@@ -167,8 +168,9 @@ public class TSP {
 		permute(new Route(), cityNums, false);
 		// Output the number of complete permutations generated NOTE: This is also the
 		// number of times the optimal route improved
-		//System.out.println("\tComplete Permutations: " + BaBRoutePerms.size());
-		//System.out.println("\t" + BaBcheapestRoute.toString() + "\n\tCost: " + getRouteCost(BaBcheapestRoute));
+		// System.out.println("\tComplete Permutations: " + BaBRoutePerms.size());
+		// System.out.println("\t" + BaBcheapestRoute.toString() + "\n\tCost: " +
+		// getRouteCost(BaBcheapestRoute));
 	}
 
 	/************************************************************************************************************/
@@ -197,7 +199,7 @@ public class TSP {
 
 	/**
 	 * Generates all permutations in lexicographic order
-	 * 
+	 *
 	 * @param r
 	 * @param notVisited
 	 */
@@ -255,7 +257,7 @@ public class TSP {
 
 	/**
 	 * Gets the cost of all the routes in the list and outputs the cheapest
-	 * 
+	 *
 	 * @param routeList
 	 */
 	private static void findShortestPermutation(List<Route> routeList) {
@@ -275,9 +277,8 @@ public class TSP {
 
 	/**
 	 * Adds stoke to start and finish of route
-	 * 
-	 * @param r
-	 *            route
+	 *
+	 * @param r route
 	 */
 	private static void appendStoke(Route r) {
 		r.getRoute().add(0, cities.get(9));
@@ -286,7 +287,7 @@ public class TSP {
 
 	/**
 	 * Gets the cost of traveling between the cities in the route
-	 * 
+	 *
 	 * @param r
 	 * @return tempCost
 	 */
@@ -294,23 +295,14 @@ public class TSP {
 		Integer tempCost = 0;
 		// Add route costs
 		for (int i = 0; i < r.getRoute().size() - 1; i++) {
-			tempCost += distances[r.getRoute().get(i).getID()][r.getRoute().get(i + 1).getID()];
+			tempCost += distances.getWeight(r.getRoute().get(i).getID(), r.getRoute().get(i + 1).getID());
 		}
 		return tempCost;
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-
-		for (Integer[] row : distances) {
-			for (Integer distance : row) {
-				sb.append(distance).append("\t");
-			}
-			sb.append("\n");
-		}
-
-		return sb.toString();
+		return distances.toString();
 	}
 
 	public List<Route> getBFRoutePerms() {
@@ -325,9 +317,15 @@ public class TSP {
 		return BaBcheapestRoute;
 	}
 
-	public Integer getBaBcheapestCost() { return BaBcheapestCost; }
+	public Integer getBaBcheapestCost() {
+		return BaBcheapestCost;
+	}
 
 	public List<City> getCities() {
 		return cities;
+	}
+
+	public static void setDistances(Weight distances) {
+		TSP.distances = distances;
 	}
 }
