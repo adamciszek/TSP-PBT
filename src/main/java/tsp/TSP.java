@@ -29,8 +29,8 @@ public class TSP {
 
 	// Branch and bound (BaB) variables
 	private static List<Route> BaBRoutePerms = new ArrayList<Route>();
-	private static Integer BaBcheapestCost = Integer.MAX_VALUE;
-	private static Route BaBcheapestRoute;
+	public static Integer BaBcheapestCost = Integer.MAX_VALUE;
+	public static Route BaBcheapestRoute;
 
 	/**
 	 * Main function

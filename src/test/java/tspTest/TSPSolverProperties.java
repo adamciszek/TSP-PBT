@@ -191,20 +191,21 @@ public class TSPSolverProperties {
     @Property
     @Report(Reporting.GENERATED)
     void testMultiplyingMatrix(@ForAll("matrixGenerator") Weight distances, @ForAll("multiplier") int multiplier) {
+
         TSP.distances = distances; // assigning our generated distance table to the instance
         TSP.branchAndBound();
-
         int cost1 = newTSP.getBaBcheapestCost();
 
-        Weight newDistances = new Weight(distances.getWeight().clone());
-        newDistances.multiplyByM(multiplier);
+        distances.multiplyByM(multiplier);
 
-        TSP.distances = (newDistances);
+        TSP.distances = (distances);
         TSP.branchAndBound();
+
         int cost2 = newTSP.getBaBcheapestCost();
 
         Assertions.assertThat(cost2).isEqualTo(cost1 * multiplier);
     }
+
 
     /*
     4) WORKS
@@ -265,10 +266,9 @@ public class TSPSolverProperties {
 
         int cost1 = newTSP.getBaBcheapestCost();
 
-        Weight newDistances = new Weight(distances.getWeight().clone());
-        newDistances.addExtraToAll(extra);
+        distances.addExtraToAll(extra);
 
-        TSP.distances = (newDistances);
+        TSP.distances = (distances);
         TSP.branchAndBound();
         int cost2 = newTSP.getBaBcheapestCost();
 
@@ -293,18 +293,23 @@ public class TSPSolverProperties {
                     // Shuffle indices  for random 1s placement
                     Collections.shuffle(indices);
 
-                    for (int i = 0; i < (size / 2); i++) {
+                    for (int i = 0; i < (size); i++) {
                         if (m[i][indices.get(i)] != 0) {
                             m[i][indices.get(i)] = 1;
-                            m[indices.get(i)][i] = 1;
                         }
                     }
                     return m;
                 })
-                .filter(m -> //makes sure the matrix is symmetrical
-                        IntStream.range(0, m.length)
-                                .allMatch(i -> IntStream.range(i, m[i].length)
-                                        .allMatch(j -> m[i][j].equals(m[j][i]))));
+                .filter(m -> {
+                    // Count the number of 1's in the matrix
+                    long numberOfOnes = Arrays.stream(m)
+                            .flatMap(Arrays::stream)
+                            .filter(x -> x == 1)
+                            .count();
+
+                    // Return true if the count equals 10
+                    return numberOfOnes == 10;
+                });
 
         return matrixArb.map(Weight::new);
     }
